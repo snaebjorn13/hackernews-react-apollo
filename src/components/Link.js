@@ -1,17 +1,20 @@
 import React, { Component } from 'react';
+import { graphql } from 'react-apollo';
+import gql from 'graphql-tag';
 
 import { AUTH_TOKEN } from '../constants';
 import { timeDifferenceForDate } from '../utils';
 
 class Link extends Component {
 	render() {
+		console.dir(this.props);
 		const authToken = localStorage.getItem(AUTH_TOKEN);
 		return (
 			<div className="flex mt2 items-start">
 				<div className="flex items-center">
 					<span className="gray">{this.props.index + 1}.</span>
 					{authToken && (
-						<div className="ml1 gray f11" onClick={() => this._voteForLink()}>
+						<div className="ml1 gray f11 vote-for-link" onClick={() => this._voteForLink()}>
 							▲
 						</div>
 					)}
@@ -23,7 +26,7 @@ class Link extends Component {
 					<div className="f6 lh-copy gray">
 						{this.props.link.votes.length} votes | by {' '}
 						{this.props.link.postedBy
-							? this.props.oink.postedBy.name
+							? this.props.link.postedBy.name
 							: 'Unknown'}{' '}
 						{timeDifferenceForDate(this.props.link.createdAt)}
 					</div>
@@ -33,8 +36,34 @@ class Link extends Component {
 	}
 
 	_voteForLink = async () => {
-		// todo
+		const linkId = this.props.link.id;
+		await this.props.voteMutation({
+			variables: {
+				linkId
+			}
+		});
 	}
 };
 
-export default Link;
+const VOTE_MUTATION = gql`
+	mutation VoteMutation($linkId: ID!) {
+		vote(linkId: $linkId) {
+			id
+			link {
+				votes {
+					id
+					user {
+						id
+					}
+				}
+			}
+			user {
+				id
+			}
+		}
+	}
+`;
+
+export default graphql(VOTE_MUTATION, {
+	name: 'voteMutation'
+})(Link);
